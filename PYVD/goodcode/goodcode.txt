@@ -1,0 +1,121 @@
+import requests
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+from selenium import webdriver
+file = open("socute.csv", mode="r", encoding="utf-8-sig")
+import time
+import re
+# Đọc dòng đầu tiên (header) nếu cần
+#header = file.readline().strip().split(',')
+column_index=2
+# Đọc dữ liệu từ file
+#file.close()
+
+def downloadVideo(link,id):
+   
+
+    cookies = {
+        '_ga': 'GA1.1.1017532922.1708538541',
+        '_ga_ZSF3D6YSLC': 'GS1.1.1708538540.1.1.1708538753.0.0.0',
+    }
+
+    headers = {
+        'authority': 'ssstik.io',
+        'accept': '*/*',
+        'accept-language': 'en-US,en;q=0.9,vi;q=0.8',
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        # 'cookie': '_ga=GA1.1.1017532922.1708538541; _ga_ZSF3D6YSLC=GS1.1.1708538540.1.1.1708538753.0.0.0',
+        'hx-current-url': 'https://ssstik.io/vi',
+        'hx-request': 'true',
+        'hx-target': 'target',
+        'hx-trigger': '_gcaptcha_pt',
+        'origin': 'https://ssstik.io',
+        'referer': 'https://ssstik.io/vi',
+        'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    }
+
+    params = {
+        'url': 'dl',
+    }
+
+    data = {
+        'id': link,
+        'locale': 'vi',
+        'tt': 'aXhmUGVj',
+    }
+
+    response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
+        
+        
+    ####
+    downloadSoup = BeautifulSoup(response.text, "html.parser")
+#
+    download_link_tag = downloadSoup.find('a', href=True)
+    if download_link_tag:
+        download_link = download_link_tag['href']
+
+        # Handle the case where the link starts with '/vi'
+        if download_link.startswith('/vi'):
+            download_link = 'https://ssstik.io' + download_link
+
+        video_title_tag = downloadSoup.find('p')
+        video_title = video_title_tag.get_text().strip()
+
+        # Remove invalid characters from the filename
+        valid_filename = re.sub(r'[\/:*?"<>|]', '', f"{id}-{video_title}.mp4")
+
+        print(f"STEP 5: Saving the video {id} :)")
+        try:
+            mp4_file = urlopen(download_link)
+
+            with open(f"videos/{valid_filename}", "wb") as output:
+                while True:
+                    data = mp4_file.read(4096)
+                    if data:
+                        output.write(data)
+                    else:
+                        break
+        except Exception as e:
+            print(f"Error downloading video {id}: {e}")
+    else:
+        print(f"Error: Unable to find download link for video {id}")
+
+#
+
+    downloadLink = downloadSoup.a["href"]
+    videoTitle = downloadSoup.p.getText().strip()
+    
+    valid_filename = re.sub(r'[\/:*?"<>|]', '', f"{id}-{videoTitle}.mp4")
+
+    print(f"STEP 5: Saving the video {id} :)")
+    mp4File = urlopen(downloadLink)
+
+    # Tên file sẽ chứa cả id và videoTitle, để tránh trùng lặp
+    with open(f"videos/{valid_filename}", "wb") as output:
+        while True:
+            data = mp4File.read(4096)
+            if data:
+                output.write(data)
+            else:
+                break
+
+# Đọc dữ liệu từ file và thực hiện việc tải video
+while True:
+    line = file.readline().strip()
+    if not line:  # Kiểm tra xem đã đọc hết file chưa
+        break
+
+    data = line.split(',')
+    # Bạn nên kiểm tra xem cột thứ 2 có tồn tại hay không
+    if len(data) >= column_index:
+        value_at_column_2 = data[column_index - 1]
+        downloadVideo(value_at_column_2, line)  # Truyền thêm id của video để sử dụng trong tên file
+        time.sleep(10)
+
+file.close()

@@ -1,0 +1,44 @@
+import os
+from gtts import gTTS
+
+file_path = "socute.csv"
+name_column_index = 0
+data_column_index = 4
+output_directory = os.path.join(os.path.dirname(__file__), "sound")
+language = "en"
+
+rows_processed = 0
+
+with open(file_path, mode="r", encoding="utf-8-sig") as file:
+    while rows_processed < 60:
+
+        line = file.readline().strip()
+        data = line.split(',')
+
+        # Check if the line has enough elements
+        if len(data) < data_column_index + 1:
+            continue
+        else:
+            # Check if the data in the specified column is not empty
+            if len(data) >= data_column_index + 1 and data[data_column_index].strip():
+                name = data[name_column_index].strip()
+                raw_text = data[data_column_index].strip()
+
+                # Remove double quotes from  the text
+                text = raw_text.replace('"', '')
+
+                # Check if the text is not empty before creating gTTS object
+                if text:
+                    print(text)
+
+                    # Create a filename based on the value in column 0
+                    filename = f"{name}.mp3"
+
+                    # Specify the full path for saving the file in the "sound" directory
+                    file_path = os.path.join(output_directory, filename)
+
+                    # Save the speech to the generated filename
+                    speech = gTTS(text=text, lang=language, slow=False, tld="com")
+                    speech.save(file_path)
+
+        rows_processed += 1
